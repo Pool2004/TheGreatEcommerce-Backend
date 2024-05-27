@@ -4,6 +4,7 @@ import com.ecommerce.Model.*;
 import com.ecommerce.Repository.IComentarioRepository;
 import com.ecommerce.Repository.IOrdenPersonalizacionRepository;
 import jakarta.annotation.PostConstruct;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
@@ -60,6 +61,8 @@ public class OrdenPersonalizacionServiceImp implements IOrdenPersonalizacionServ
 
             ordenesPersonalizacionesExistentes = this.ordenPersonalizacionRepository.findAll();
 
+
+
             if (idUsuarioComentario == null) {
                 textoRespuesta += "el id del comentario de usuario no puede ser nulo\n";
             }
@@ -75,13 +78,20 @@ public class OrdenPersonalizacionServiceImp implements IOrdenPersonalizacionServ
             if (!textoRespuesta.isEmpty()) {
                 textoRespuesta += "Por favor, corrija los problemas y vuelva a intentarlo.\n";
             }else{
-                 // Este proceso se hace, ya que si se guarda comentario se sobreescribe el obj en vez de guardarlo como otro
-                ComentarioModel comentario = ordenPersonalizacion.getIdComentario();
+                // Este proceso se hace, ya que si se guarda comentario se sobreescribe el obj en vez de guardarlo como otro
+
                 ComentarioModel objC = new ComentarioModel();
 
                 objC.setDescripcion(descripcion);
                 objC.setFecha(fechaComentario);
                 objC.setIdUsuario(idUsuarioComentario);
+
+                if(idUsuarioDiseniador == null){
+                    UsuarioModel objU = new UsuarioModel();
+                    objU.setIdUsuario(-1);
+                    ordenPersonalizacion.setSuDiseniador(objU);
+                }
+
 
                 if (ordenesPersonalizacionesExistentes.isEmpty()) {
                     this.ordenPersonalizacionRepository.save(ordenPersonalizacion);
@@ -117,39 +127,37 @@ public class OrdenPersonalizacionServiceImp implements IOrdenPersonalizacionServ
         return this.ordenPersonalizacionRepository.findById(idOrdenPersonalizacion);
     }
 
+
     @Override
     public String actualizarOrdenPersonalizacionPorId(OrdenPersonalizacionModel ordenPersonalizacion, Integer idOrdenPersonalizacion) {
-
         String textoRespuesta = "";
 
-        // Verificamos si existe para actualizar.
         try {
             Optional<OrdenPersonalizacionModel> ordenPersonalizacionEncontrada = this.ordenPersonalizacionRepository.findById(idOrdenPersonalizacion);
 
             if (ordenPersonalizacionEncontrada.isPresent()) {
-
                 OrdenPersonalizacionModel ordenPersonalizacionActualizar = ordenPersonalizacionEncontrada.get();
 
-                BeanUtils.copyProperties(ordenPersonalizacion, ordenPersonalizacionActualizar);
+                // Excluir el campo `id` de la copia de propiedades
+                BeanUtils.copyProperties(ordenPersonalizacion, ordenPersonalizacionActualizar, "idOrdenPersonalizacion");
 
-                this.ordenPersonalizacionRepository.save(ordenPersonalizacion);
+                this.ordenPersonalizacionRepository.save(ordenPersonalizacionActualizar);
 
-                return "La orden de personalizacion con código: " + idOrdenPersonalizacion + ", Ha sido actualizado con éxito.";
-
+                return "La orden de personalización con código: " + idOrdenPersonalizacion + ", ha sido actualizada con éxito.";
             } else {
-
-                textoRespuesta = "La orden de personalizacion con código: " + idOrdenPersonalizacion + ", No existe en el sistema. Por ende el proceso no se realizo correctamente.";
+                textoRespuesta = "La orden de personalización con código: " + idOrdenPersonalizacion + ", no existe en el sistema. Por ende, el proceso no se realizó correctamente.";
             }
-        }catch(NullPointerException e){
-            textoRespuesta = "Alguno de los valores son nulos, verifique los campos";
-        }catch(UncheckedIOException e){
-            textoRespuesta = "Se presento un error, inesperado. Verifique el JSON y los valores no puede ser nulos.";
-        }catch(DataIntegrityViolationException e){
+        } catch (NullPointerException e) {
+            textoRespuesta = "Alguno de los valores son nulos, verifique los campos.";
+        } catch (UncheckedIOException e) {
+            textoRespuesta = "Se presentó un error inesperado. Verifique el JSON y los valores no pueden ser nulos.";
+        } catch (DataIntegrityViolationException e) {
             textoRespuesta = "Un error en el JSON, verifique.";
         }
 
         return textoRespuesta;
     }
+
 
 
 
