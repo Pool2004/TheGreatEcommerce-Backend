@@ -18,6 +18,8 @@ public interface IUsuarioService {
 
     Optional<UsuarioModel> verificarUsuario(UsuarioModelDto usuarioDto);
 
+
+
     UsuarioModel asignarRol(Integer idUsuario, TipoUsuario rol, TipoUsuario rolUsuario);
 
 
